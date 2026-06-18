@@ -1,0 +1,54 @@
+name: fileflow
+description: "Keep what matters. Delete the rest."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.8.1
+
+  # Local database
+  sqflite: ^2.4.2
+  path: ^1.9.1
+
+  # Background tasks
+  workmanager: ^0.9.0
+
+  # Permissions
+  permission_handler: ^11.4.0
+
+  # Local notifications
+  flutter_local_notifications: ^18.0.1
+
+  # File system utilities
+  path_provider: ^2.1.5
+
+
+  # Preferences
+  shared_preferences: ^2.3.5
+
+  # Date formatting
+  intl: ^0.20.2
+
+  # Icons
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  riverpod_generator: ^2.6.1
+  build_runner: ^2.4.14
+
+flutter:
+  uses-material-design: true
