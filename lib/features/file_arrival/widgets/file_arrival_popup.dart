@@ -1,6 +1,6 @@
 import 'package:fileflow/core/models/file_arrival.dart';
-import 'package:fileflow/core/models/tracked_file.dart';
 import 'package:fileflow/core/theme/app_theme.dart';
+import 'package:fileflow/shared/widgets/file_thumbnail.dart';
 import 'package:flutter/material.dart';
 
 /// Smart arrival popup. Appears within a few seconds of a file landing in a
@@ -171,9 +171,11 @@ class _FileArrivalPopupState extends State<FileArrivalPopup>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          widget.arrival.fileType.icon,
-          style: const TextStyle(fontSize: 22),
+        FileThumbnail(
+          path: widget.arrival.path,
+          type: widget.arrival.fileType,
+          size: 48,
+          borderRadius: 10,
         ),
         const SizedBox(width: 10),
         Expanded(

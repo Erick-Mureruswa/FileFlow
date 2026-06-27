@@ -2,6 +2,7 @@ import 'package:fileflow/core/models/tracked_file.dart';
 import 'package:fileflow/core/providers/swipe_cleanup_provider.dart';
 import 'package:fileflow/core/theme/app_theme.dart';
 import 'package:fileflow/shared/utils/file_utils.dart';
+import 'package:fileflow/shared/widgets/file_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -173,7 +174,7 @@ class _QueuedFileTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
           contentPadding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
-          leading: _FileTypeIcon(type: file.fileType),
+          leading: FileThumbnail(path: file.path, type: file.fileType, size: 44),
           title: Text(
             file.name,
             style: const TextStyle(
@@ -196,36 +197,6 @@ class _QueuedFileTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _FileTypeIcon extends StatelessWidget {
-  const _FileTypeIcon({required this.type});
-  final FileType type;
-
-  static const _config = {
-    FileType.image: (Icons.image_outlined, Color(0xFF10B981)),
-    FileType.video: (Icons.videocam_outlined, Color(0xFF7C3AED)),
-    FileType.audio: (Icons.audiotrack_outlined, Color(0xFF0EA5E9)),
-    FileType.document: (Icons.description_outlined, Color(0xFFF59E0B)),
-    FileType.archive: (Icons.folder_zip_outlined, Color(0xFF6B7280)),
-    FileType.other: (Icons.insert_drive_file_outlined, Color(0xFF475569)),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, color) =
-        _config[type] ?? (Icons.insert_drive_file_outlined, const Color(0xFF475569));
-
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Icon(icon, color: color, size: 20),
     );
   }
 }

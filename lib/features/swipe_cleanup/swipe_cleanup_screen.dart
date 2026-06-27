@@ -1,9 +1,8 @@
-import 'dart:io';
-
 import 'package:fileflow/core/models/tracked_file.dart';
 import 'package:fileflow/core/providers/swipe_cleanup_provider.dart';
 import 'package:fileflow/core/theme/app_theme.dart';
 import 'package:fileflow/shared/utils/file_utils.dart';
+import 'package:fileflow/shared/widgets/file_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -668,68 +667,17 @@ class _FileCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(flex: 6, child: _FilePreview(file: file)),
+            Expanded(
+              flex: 6,
+              child: FileThumbnail(
+                path: file.path,
+                type: file.fileType,
+                expand: true,
+              ),
+            ),
             _FileInfo(file: file),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _FilePreview extends StatelessWidget {
-  const _FilePreview({required this.file});
-  final TrackedFile file;
-
-  @override
-  Widget build(BuildContext context) {
-    if (file.fileType == FileType.image) {
-      return Image.file(
-        File(file.path),
-        fit: BoxFit.cover,
-        cacheWidth: 800,
-        errorBuilder: (_, _, _) => _IconPreview(file: file),
-      );
-    }
-    return _IconPreview(file: file);
-  }
-}
-
-class _IconPreview extends StatelessWidget {
-  const _IconPreview({required this.file});
-  final TrackedFile file;
-
-  static const _typeData = {
-    FileType.video: (Icons.videocam_outlined, Color(0xFF7C3AED)),
-    FileType.audio: (Icons.audiotrack_outlined, Color(0xFF0EA5E9)),
-    FileType.document: (Icons.description_outlined, Color(0xFFF59E0B)),
-    FileType.archive: (Icons.folder_zip_outlined, Color(0xFF6B7280)),
-    FileType.other: (Icons.insert_drive_file_outlined, Color(0xFF475569)),
-    FileType.image: (Icons.image_outlined, Color(0xFF10B981)),
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final (icon, color) =
-        _typeData[file.fileType] ?? (Icons.insert_drive_file_outlined, const Color(0xFF475569));
-
-    return Container(
-      color: color.withValues(alpha: 0.08),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 80),
-          const SizedBox(height: 12),
-          Text(
-            file.name.split('.').last.toUpperCase(),
-            style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 2,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -15,6 +15,7 @@ class MainActivity : FlutterActivity() {
     private val channel = "fileflow/folder_picker"
     private val watcherChannel = "fileflow/file_watcher"
     private val watcherEventsChannel = "fileflow/file_watcher_events"
+    private val videoThumbChannel = "fileflow/video_thumb"
     private val requestCode = 1001
     private var pendingResult: MethodChannel.Result? = null
 
@@ -64,6 +65,23 @@ class MainActivity : FlutterActivity() {
                         result.success(null)
                     }
                     else -> result.notImplemented()
+                }
+            }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, videoThumbChannel)
+            .setMethodCallHandler { call, result ->
+                if (call.method == "getThumbnail") {
+                    val path = call.argument<String>("path")
+                    val maxWidth = call.argument<Int>("maxWidth") ?: 320
+                    if (path == null) {
+                        result.success(null)
+                    } else {
+                        VideoThumbnailer.generate(path, maxWidth) { bytes ->
+                            mainHandler.post { result.success(bytes) }
+                        }
+                    }
+                } else {
+                    result.notImplemented()
                 }
             }
 

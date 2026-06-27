@@ -3,6 +3,7 @@ import 'package:fileflow/core/providers/files_provider.dart';
 import 'package:fileflow/core/theme/app_theme.dart';
 import 'package:fileflow/features/files/widgets/timer_bottom_sheet.dart';
 import 'package:fileflow/shared/utils/file_utils.dart';
+import 'package:fileflow/shared/widgets/file_thumbnail.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,22 +37,8 @@ class FileCard extends ConsumerWidget {
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                // File type icon
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Center(
-                    child: Text(
-                      file.fileType.icon,
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-                ),
+                // Thumbnail / type icon
+                FileThumbnail(path: file.path, type: file.fileType, size: 44),
                 const SizedBox(width: 12),
                 // File info
                 Expanded(
