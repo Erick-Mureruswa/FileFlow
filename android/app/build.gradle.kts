@@ -28,9 +28,14 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with the debug key so the APK is installable via sideload.
             signingConfig = signingConfigs.getByName("debug")
+            // Disable R8 shrinking/obfuscation: it strips classes that WorkManager
+            // and other plugins load via reflection (e.g. WorkDatabase_Impl),
+            // crashing the release build at startup. Correctness over size for a
+            // sideloaded app.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
