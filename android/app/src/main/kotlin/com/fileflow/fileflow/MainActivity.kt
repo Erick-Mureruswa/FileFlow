@@ -1,11 +1,15 @@
 package com.fileflow.fileflow
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.provider.DocumentsContract
+import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
@@ -16,6 +20,7 @@ class MainActivity : FlutterActivity() {
     private val watcherChannel = "fileflow/file_watcher"
     private val watcherEventsChannel = "fileflow/file_watcher_events"
     private val videoThumbChannel = "fileflow/video_thumb"
+    private val monitorChannel = "fileflow/monitor"
     private val requestCode = 1001
     private var pendingResult: MethodChannel.Result? = null
 
@@ -85,6 +90,27 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
+        // Background monitoring foreground service control.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, monitorChannel)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "start" -> {
+                        MonitorService.start(applicationContext)
+                        result.success(null)
+                    }
+                    "stop" -> {
+                        MonitorService.stop(applicationContext)
+                        result.success(null)
+                    }
+                    "isBatteryExempt" -> result.success(isBatteryExempt())
+                    "requestBatteryExemption" -> {
+                        requestBatteryExemption()
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, watcherEventsChannel)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -95,6 +121,37 @@ class MainActivity : FlutterActivity() {
                     eventSink = null
                 }
             })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // App is visible: the in-app popup handles arrivals, so the background
+        // service stands down to avoid duplicate prompts.
+        AppState.isForeground = true
+    }
+
+    override fun onPause() {
+        AppState.isForeground = false
+        super.onPause()
+    }
+
+    private fun isBatteryExempt(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        return pm.isIgnoringBatteryOptimizations(packageName)
+    }
+
+    @Suppress("BatteryLife")
+    private fun requestBatteryExemption() {
+        if (isBatteryExempt()) return
+        try {
+            startActivity(
+                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                    .setData(Uri.parse("package:$packageName")),
+            )
+        } catch (_: Exception) {
+            // Some devices lack this screen; the ongoing service still runs.
+        }
     }
 
     override fun onDestroy() {

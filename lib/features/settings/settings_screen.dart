@@ -1,5 +1,6 @@
 import 'package:fileflow/core/background/workmanager_tasks.dart';
 import 'package:fileflow/core/services/folder_picker_service.dart';
+import 'package:fileflow/core/services/monitor_control.dart';
 import 'package:fileflow/core/services/notification_service.dart';
 import 'package:fileflow/core/models/monitored_folder.dart';
 import 'package:fileflow/core/providers/folders_provider.dart';
@@ -20,6 +21,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _recycleBinEnabled = true;
   int _recycleBinDays = 7;
+  bool _bgMonitorEnabled = true;
 
   @override
   void initState() {
@@ -32,7 +34,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     setState(() {
       _recycleBinEnabled = prefs.getBool('recycle_bin_enabled') ?? true;
       _recycleBinDays = prefs.getInt('recycle_bin_days') ?? 7;
+      _bgMonitorEnabled = prefs.getBool(MonitorControl.prefKey) ?? true;
     });
+  }
+
+  Future<void> _setBgMonitor(bool v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(MonitorControl.prefKey, v);
+    if (v) {
+      await MonitorControl.start();
+      if (!await MonitorControl.isBatteryExempt()) {
+        await MonitorControl.requestBatteryExemption();
+      }
+    } else {
+      await MonitorControl.stop();
+    }
+    setState(() => _bgMonitorEnabled = v);
   }
 
   @override
@@ -104,6 +121,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 24),
           _SectionHeader(label: 'Background Tasks'),
           const SizedBox(height: 10),
+          _SettingsTile(
+            title: 'Background monitoring',
+            subtitle: 'Keep watching folders even when the app is closed',
+            trailing: Switch(
+              value: _bgMonitorEnabled,
+              onChanged: _setBgMonitor,
+            ),
+          ),
+          _SettingsTile(
+            title: 'Allow background activity',
+            subtitle: 'Stop the system from pausing monitoring to save battery',
+            onTap: () async {
+              await MonitorControl.requestBatteryExemption();
+              if (context.mounted) {
+                final exempt = await MonitorControl.isBatteryExempt();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        exempt
+                            ? 'Background activity allowed'
+                            : 'Still restricted. Allow it to keep monitoring.',
+                      ),
+                    ),
+                  );
+                }
+              }
+            },
+          ),
           _SettingsTile(
             title: 'Run cleanup now',
             subtitle: 'Manually trigger a background scan and deletion',

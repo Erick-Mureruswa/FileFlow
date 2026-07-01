@@ -1,8 +1,10 @@
 import 'package:fileflow/core/providers/file_arrival_provider.dart';
 import 'package:fileflow/core/providers/folders_provider.dart';
+import 'package:fileflow/core/services/monitor_control.dart';
 import 'package:fileflow/features/file_arrival/widgets/file_arrival_popup.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Mounts the real-time folder watcher for the whole app and overlays the smart
 /// arrival popup above the current screen.
@@ -25,8 +27,24 @@ class _FileArrivalScopeState extends ConsumerState<FileArrivalScope>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(fileArrivalProvider.notifier).startWatching();
+      // Start the background service now, while the app is clearly in the
+      // foreground (Android forbids starting a foreground service from the
+      // background). It stands down while the app is visible and takes over
+      // once the app is closed.
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(MonitorControl.prefKey) ?? true) {
+        await MonitorControl.start();
+        // Ask once for the battery-optimization exemption, without which the
+        // OS freezes the service and background tracking stops.
+        if (!(prefs.getBool('battery_prompt_shown') ?? false)) {
+          if (!await MonitorControl.isBatteryExempt()) {
+            await MonitorControl.requestBatteryExemption();
+          }
+          await prefs.setBool('battery_prompt_shown', true);
+        }
+      }
     });
   }
 
@@ -38,8 +56,15 @@ class _FileArrivalScopeState extends ConsumerState<FileArrivalScope>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final notifier = ref.read(fileArrivalProvider.notifier);
     if (state == AppLifecycleState.resumed) {
-      ref.read(fileArrivalProvider.notifier).restart();
+      // Foreground: the in-app popup handles arrivals again. Restarting resets
+      // the watermark so files tracked by the service while we were away do not
+      // replay as a burst of popups.
+      notifier.restart();
+    } else if (state == AppLifecycleState.paused) {
+      // Background: hand off to the foreground service.
+      notifier.stopWatching();
     }
   }
 

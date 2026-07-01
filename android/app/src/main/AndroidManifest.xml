@@ -9,6 +9,8 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Notifications -->
@@ -42,6 +44,29 @@
         <!-- WorkManager background task receiver -->
         <receiver
             android:name="androidx.work.impl.background.systemalarm.ConstraintProxy$BatteryNotLowProxy"
+            android:exported="false" />
+
+        <!-- Background folder monitoring -->
+        <service
+            android:name=".MonitorService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Continuous monitoring of user-selected folders to auto-manage file lifecycle" />
+        </service>
+
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".MonitorActionReceiver"
             android:exported="false" />
 
         <meta-data

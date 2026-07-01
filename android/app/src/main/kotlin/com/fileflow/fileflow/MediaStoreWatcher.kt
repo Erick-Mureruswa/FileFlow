@@ -40,6 +40,23 @@ class MediaStoreWatcher(
         queryNew()
     }
 
+    // Optional polling. ContentObserver.onChange is not delivered to background
+    // processes on modern Android, so the background service polls MediaStore
+    // directly on an interval instead.
+    private var pollMs = 0L
+    private val pollRunnable = object : Runnable {
+        override fun run() {
+            queryNew()
+            if (pollMs > 0) handler.postDelayed(this, pollMs)
+        }
+    }
+
+    fun enablePolling(intervalMs: Long) {
+        pollMs = intervalMs
+        handler.removeCallbacks(pollRunnable)
+        handler.postDelayed(pollRunnable, intervalMs)
+    }
+
     fun start() {
         if (observer != null) return
         lastId = currentMaxId()
@@ -54,6 +71,8 @@ class MediaStoreWatcher(
 
     fun stop() {
         handler.removeCallbacks(debounceRunnable)
+        handler.removeCallbacks(pollRunnable)
+        pollMs = 0L
         queryScheduled = false
         observer?.let { resolver.unregisterContentObserver(it) }
         observer = null
@@ -114,7 +133,7 @@ class MediaStoreWatcher(
                 lastId = maxId
             }
         } catch (_: Exception) {
-            // Ignore transient query failures; the next onChange will retry.
+            // Ignore transient query failures; the next tick will retry.
         }
     }
 }
